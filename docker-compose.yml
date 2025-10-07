@@ -1,0 +1,21 @@
+version: '3.9'
+
+services:
+  backend:
+    container_name: ${BACKEND_IMAGE_NAME}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - WORKDIR_PATH=${WORKDIR_PATH}
+        - PORT=${PORT}
+    image: ${BACKEND_IMAGE_NAME}:${APP_VERSION}
+    ports:
+      - "${PORT}:${PORT}"
+    env_file:
+      - .env
+    volumes:
+      - ./storage:/app/storage
+      - .:/app
+    restart: always
+    command: uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --reload
