@@ -1,68 +1,106 @@
-# PDF Editor Service
+# PDF Editor Service - Backend
 
-A FastAPI-based service for editing PDF files with image insertion capabilities. Designed to integrate with document management systems like Teedy.
+A FastAPI-based microservice for editing PDF files with image insertion capabilities. Designed to integrate with document management systems like Teedy.
 
-## Features
+## 🚀 Features
 
 - ✅ Upload PDF files
 - ✅ Create editing sessions with expiration
-- ✅ Add images to PDF pages
-- ✅ Move, resize, rotate images
+- ✅ Add images to PDF pages (JPEG, PNG, GIF, WebP)
+- ✅ Move, resize, rotate images on PDF
 - ✅ Undo/Redo operations
 - ✅ Save and download edited PDFs
 - ✅ Session-based authentication
 - ✅ Webhook notifications (for Teedy integration)
-- ✅ RESTful API
+- ✅ RESTful API with automatic documentation
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Backend**: FastAPI (Python 3.11+)
-- **Database**: PostgreSQL 15
+- **Backend**: FastAPI (Python 3.11)
+- **Database**: PostgreSQL 15 (Remote)
 - **PDF Processing**: PyPDF2, ReportLab
 - **Image Processing**: Pillow
 - **Storage**: Local file system
 - **Deployment**: Docker & Docker Compose
 
-### Prerequisites
+## 📋 Prerequisites
 
 - Docker & Docker Compose
-- Python 3.11+ (for local development)
-- PostgreSQL 15 (if running without Docker)
+- PostgreSQL database (already configured remotely)
+- Python 3.11+ (optional, for local development)
 
-## API Endpoints
+## ⚡ Quick Start
 
-### File Management
+### 1. Clone & Setup
 
-- `POST /api/v1/files/upload` - Upload a PDF file
-- `GET /api/v1/files/{file_id}` - Get file information
-- `GET /api/v1/files/{file_id}/download` - Download original PDF
-- `DELETE /api/v1/files/{file_id}` - Delete file
+```bash
+# Clone the repository
+cd pdf-editor-backend
 
-### Session Management
+# Copy environment file (if not already present)
+cp .env.example .env
 
-- `POST /api/v1/files/{file_id}/sessions` - Create edit session
-- `GET /api/v1/files/{file_id}/sessions/{session_id}` - Get session info
-- `POST /api/v1/files/{file_id}/sessions/{session_id}/commit` - Save edited PDF
-- `GET /api/v1/sessions/{session_id}/download` - Download edited PDF
+# Edit .env with your database credentials
+```
 
-### Edit Operations
+### 2. Start the Service
 
-- `POST /api/v1/sessions/{session_id}/operations` - Add operation
-- `GET /api/v1/sessions/{session_id}/operations` - List operations
-- `DELETE /api/v1/sessions/{session_id}/operations/{operation_id}` - Delete operation
-- `DELETE /api/v1/sessions/{session_id}/operations` - Clear all operations
+```bash
+# Build and start
+docker-compose up --build -d
 
-### Image Management
+# Check logs
+docker-compose logs -f backend
 
-- `POST /api/v1/sessions/{session_id}/images` - Upload image
-- `GET /api/v1/sessions/{session_id}/images/{image_id}` - Get image
-- `DELETE /api/v1/sessions/{session_id}/images/{image_id}` - Delete image
+# Stop
+docker-compose down
+```
 
-## Authentication
+### 3. Verify It's Running
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Expected response:
+# {"status":"healthy","app":"PDF Editor Service","version":"1.0.0"}
+```
+
+### 4. Access API Documentation
+
+Open in your browser:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+## 📁 Project Structure
+
+```
+pdf-editor-backend/
+├── app/
+│   ├── api/v1/              # API endpoints
+│   ├── models/              # SQLAlchemy ORM models
+│   ├── schemas/             # Pydantic schemas (validation)
+│   ├── services/            # Business logic
+│   ├── config.py            # Configuration
+│   ├── database.py          # Database connection
+│   └── main.py              # FastAPI app entry point
+├── storage/                 # File storage
+│   ├── uploads/             # Original PDFs
+│   ├── edited/              # Edited PDFs
+│   └── temp/                # Temporary session files
+├── .env                     # Environment variables
+├── docker-compose.yml       # Docker setup
+├── Dockerfile               # Docker image
+├── requirements.txt         # Python dependencies
+└── README.md
+```
+
+## 🔑 Authentication
 
 ### Service-to-Service (Teedy → PDF Editor)
 
-Use API key in header:
+Use API key in `X-API-Key` header:
+
 ```bash
 curl -X POST http://localhost:8000/api/v1/files/upload \
   -H "X-API-Key: your-api-secret-key" \
@@ -71,49 +109,107 @@ curl -X POST http://localhost:8000/api/v1/files/upload \
 
 ### Browser/User (Frontend → PDF Editor)
 
-Use session token:
+Use session token in query parameter:
+
 ```bash
 curl http://localhost:8000/api/v1/sessions/{session_id}/operations?session_token={token}
 ```
 
-## Integration with Teedy
+## 📡 API Endpoints
 
-### Flow
+### File Management
 
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/v1/files/upload` | Upload PDF file | API Key |
+| GET | `/api/v1/files/{file_id}` | Get file info | API Key |
+| GET | `/api/v1/files/{file_id}/download` | Download original PDF | API Key |
+| DELETE | `/api/v1/files/{file_id}` | Delete file | API Key |
+
+### Session Management
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/v1/files/{file_id}/sessions` | Create edit session | API Key |
+| GET | `/api/v1/files/{file_id}/sessions/{session_id}` | Get session info | Session Token |
+| POST | `/api/v1/files/{file_id}/sessions/{session_id}/commit` | Save edited PDF | Session Token |
+| GET | `/api/v1/sessions/{session_id}/download` | Download edited PDF | Session Token |
+
+### Edit Operations (Undo/Redo)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/v1/sessions/{session_id}/operations` | Add operation | Session Token |
+| GET | `/api/v1/sessions/{session_id}/operations` | List all operations | Session Token |
+| DELETE | `/api/v1/sessions/{session_id}/operations/{op_id}` | Delete operation | Session Token |
+| DELETE | `/api/v1/sessions/{session_id}/operations` | Clear all operations | Session Token |
+
+### Image Management
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/v1/sessions/{session_id}/images` | Upload image | Session Token |
+| GET | `/api/v1/sessions/{session_id}/images/{image_id}` | Get image | Session Token |
+| DELETE | `/api/v1/sessions/{session_id}/images/{image_id}` | Delete image | Session Token |
+
+## 🔄 Integration Flow with Teedy
+
+```
 1. User clicks "Edit PDF" in Teedy
-2. Teedy uploads PDF to editor service:
-   ```bash
+   ↓
+2. Teedy uploads PDF to editor service
    POST /api/v1/files/upload
-   ```
-3. Teedy creates edit session:
-   ```bash
+   ↓
+3. Teedy creates edit session
    POST /api/v1/files/{file_id}/sessions
-   {
-     "callback_url": "https://teedy.example.com/api/webhook/pdf-edited"
-   }
-   ```
-4. Teedy redirects user to `editor_url`
+   Response: { "editor_url": "...", "session_token": "..." }
+   ↓
+4. Teedy redirects user to editor_url
+   ↓
 5. User edits PDF in browser
-6. User saves → Editor service calls Teedy webhook
-7. Teedy downloads edited PDF:
-   ```bash
-   GET /api/v1/sessions/{session_id}/download?token={token}
-   ```
-
-### Webhook Payload
-
-When editing is complete, the service sends:
-```json
-{
-  "session_id": "uuid",
-  "file_id": "uuid",
-  "status": "completed",
-  "download_url": "https://editor.example.com/api/v1/sessions/{session_id}/download?token={token}",
-  "completed_at": "2025-10-07T10:30:00Z"
-}
+   - Upload images
+   - Position, resize, rotate
+   - Undo/redo changes
+   ↓
+6. User clicks "Save"
+   POST /api/v1/sessions/{session_id}/commit
+   ↓
+7. Editor service processes PDF and calls webhook
+   POST {callback_url} with download link
+   ↓
+8. Teedy downloads edited PDF
+   GET /api/v1/sessions/{session_id}/download
 ```
 
-## Operation Data Format
+## 📝 Environment Variables
+
+```env
+# Application
+APP_NAME="PDF Editor Service"
+APP_VERSION=1.0.0
+DEBUG=True
+PORT=8000
+
+# Security
+API_SECRET_KEY=your-secret-key-here
+SESSION_SECRET_KEY=your-session-secret
+
+# Database (Remote PostgreSQL)
+DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/dbname
+DATABASE_URL_SYNC=postgresql://user:pass@host:5432/dbname
+
+# Storage
+STORAGE_PATH=./storage
+UPLOAD_MAX_SIZE=52428800  # 50MB
+
+# Session
+SESSION_EXPIRY_HOURS=24
+
+# CORS
+CORS_ORIGINS=["http://localhost:5173","http://localhost:3000"]
+```
+
+## 📊 Operation Data Format
 
 ### Add Image Operation
 ```json
@@ -123,12 +219,7 @@ When editing is complete, the service sends:
     "page": 1,
     "image_id": "uuid",
     "image_path": "/storage/temp/session-id/image.png",
-    "position": {
-      "x": 100,
-      "y": 200,
-      "width": 300,
-      "height": 200
-    },
+    "position": {"x": 100, "y": 200, "width": 300, "height": 200},
     "rotation": 0,
     "opacity": 1.0
   }
@@ -148,23 +239,12 @@ When editing is complete, the service sends:
 }
 ```
 
-## Project Structure
+## 🎯 Roadmap
 
-```
-pdf-editor-backend/
-├── app/
-│   ├── api/v1/          # API endpoints
-│   ├── models/          # SQLAlchemy models
-│   ├── schemas/         # Pydantic schemas
-│   ├── services/        # Business logic
-│   ├── config.py        # Configuration
-│   ├── database.py      # Database setup
-│   └── main.py          # FastAPI app
-├── storage/             # File storage
-├── docker-compose.yml   # Docker setup
-└── requirements.txt     # Python dependencies
-```
-
-## Support
-
-For issues and questions, please create an issue in the repository.
+- [ ] Frontend React application
+- [ ] Real-time collaboration
+- [ ] Text annotation support
+- [ ] Digital signatures
+- [ ] Page manipulation (add/delete/reorder)
+- [ ] Batch processing
+- [ ] OCR text recognition

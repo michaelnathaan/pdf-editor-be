@@ -79,10 +79,8 @@ async def root():
         "health": "/health"
     }
 
-
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
-
 
 if __name__ == "__main__":
     import uvicorn

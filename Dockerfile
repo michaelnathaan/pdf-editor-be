@@ -5,11 +5,12 @@ ARG WORKDIR_PATH
 ARG PORT
 
 # Set working directory
-WORKDIR ${WORKDIR_PATH}
+WORKDIR $WORKDIR_PATH
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
+    iputils-ping \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
@@ -26,7 +27,7 @@ COPY . .
 RUN mkdir -p storage/uploads storage/edited storage/temp
 
 # Expose port
-EXPOSE ${PORT}
+EXPOSE $PORT
 
 # Default command (can be overridden in docker-compose)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", $PORT]
