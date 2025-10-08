@@ -14,6 +14,8 @@ async def lifespan(app: FastAPI):
     print(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     print(f"Storage path: {settings.STORAGE_PATH}")
     print(f"Debug mode: {settings.DEBUG}")
+    print(">>> Using DB URL:", settings.DATABASE_URL)
+
     
     yield
     print(f"Shutting down {settings.APP_NAME}")
