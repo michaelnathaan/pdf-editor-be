@@ -45,12 +45,34 @@ async def create_operation(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid operation type. Must be one of: {', '.join(valid_types)}"
         )
-
+    
+    # If it's an add_image operation, verify the image exists and update the path
+    operation_data = operation.operation_data.copy()
+    if operation.operation_type == "add_image" and "image_id" in operation_data:
+        from app.models import SessionImage
+        
+        image_id = operation_data["image_id"]
+        result = await db.execute(
+            select(SessionImage).where(
+                SessionImage.id == UUID(image_id) if isinstance(image_id, str) else image_id,
+                SessionImage.session_id == session_id
+            )
+        )
+        db_image = result.scalar_one_or_none()
+        
+        if db_image:
+            # Use the actual file path from the database
+            operation_data["image_path"] = db_image.file_path
+            print(f"Updated image_path to: {db_image.file_path}")
+        else:
+            print(f"Warning: Image {image_id} not found in session {session_id}")
+    
+    # Create operation
     db_operation = EditOperation(
         session_id=session_id,
         operation_order=next_order,
         operation_type=operation.operation_type,
-        operation_data=operation.operation_data
+        operation_data=operation_data
     )
     
     db.add(db_operation)
