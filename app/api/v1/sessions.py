@@ -175,7 +175,7 @@ async def commit_session(
     db_session.edited_file_size = edited_size
 
     base_url = str(request.base_url).rstrip('/')
-    download_url = f"{base_url}/api/v1/sessions/{session_id}/download?token={session_token}"
+    download_url = f"{base_url}/api/v1/sessions/{session_id}/download?session_token={session_token}"
 
     if db_session.callback_url:
         db_session.callback_status = "pending"

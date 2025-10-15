@@ -101,7 +101,7 @@ async def upload_image(
     await db.refresh(db_image)
 
     base_url = str(request.base_url).rstrip('/') if request else ""
-    image_url = f"{base_url}/api/v1/sessions/{session_id}/images/{db_image.id}?token={session_token}"
+    image_url = f"{base_url}/api/v1/sessions/{session_id}/images/{db_image.id}?session_token={session_token}"
     
     return ImageUploadResponse(
         id=db_image.id,

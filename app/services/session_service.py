@@ -27,7 +27,7 @@ class SessionService:
         # In production, this would be your frontend URL
         # For now, using a placeholder
         base = base_url or f"http://localhost:5173"
-        return f"{base}/edit/{session_id}?token={session_token}"
+        return f"{base}/edit/{session_id}?session_token={session_token}"
     
     @staticmethod
     async def send_webhook(
