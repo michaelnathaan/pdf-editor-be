@@ -170,9 +170,12 @@ async def commit_session(
 
     from datetime import datetime
     db_session.status = "completed"
-    db_session.completed_at = datetime.utcnow()
+    db_session.completed_at = datetime.now()
     db_session.edited_file_path = edited_path
     db_session.edited_file_size = edited_size
+    
+    await db.commit()  # <-- add this right after updating session fields
+    await db.refresh(db_session)
 
     base_url = str(request.base_url).rstrip('/')
     download_url = f"{base_url}/api/v1/sessions/{session_id}/download?session_token={session_token}"

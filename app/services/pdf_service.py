@@ -38,6 +38,27 @@ class PDFService:
     ) -> None:
         """
         Apply all operations to PDF and save result
+        Operations format:
+        {
+            "operation_type": "add_image",
+            "operation_data": {
+                "page": 0,  # 0-based page index
+                "image_path": "/path/to/image.png",
+                "position": {"x": 100, "y": 200, "width": 300, "height": 200},
+                "rotation": 0,
+                "opacity": 1.0
+            }
+        }
+        
+        OR
+        
+        {
+            "operation_type": "delete_image",
+            "operation_data": {
+                "page": 0,
+                "image_id": "uuid"
+            }
+        }
         """
         import json
         from io import BytesIO
@@ -62,7 +83,7 @@ class PDFService:
                 op_type = op.get("operation_type")
                 data = op.get("operation_data", {})
 
-                if op_type not in ["add_image", "move_image"]:
+                if op_type not in ["add_image", "move_image", "delete_image"]:
                     print(f"Skipping unsupported op type: {op_type}")
                     continue
 
@@ -152,6 +173,7 @@ class PDFService:
                             image_ops[img_id]["rotation"] = data["rotation"]
                     else:
                         print(f"⚠️ move_image found for {img_id} before add_image, skipping")
+                
 
             if not image_ops:
                 print("⚠️ No images to draw on overlay")
