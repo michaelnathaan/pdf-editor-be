@@ -155,25 +155,37 @@ class PDFService:
             print(f"Creating overlay for page with dimensions: {page_width}x{page_height}")
             print(f"Number of operations: {len(operations)}")
 
-            # Merge move_image into latest add_image state
             image_ops = {}
+            deleted_images = set()
+
+            # Merge move_image into latest add_image state
             for op in operations:
                 data = op.get("operation_data", {})
                 img_id = data.get("image_id")
                 if not img_id:
                     continue
 
-                if op["operation_type"] == "add_image":
+                op_type = op.get("operation_type")
+
+                if op_type == "add_image":
                     image_ops[img_id] = data
 
-                elif op["operation_type"] == "move_image":
+                elif op_type == "move_image":
                     if img_id in image_ops:
                         image_ops[img_id]["position"] = data.get("new_position", image_ops[img_id].get("position"))
                         if "rotation" in data:
                             image_ops[img_id]["rotation"] = data["rotation"]
                     else:
                         print(f"⚠️ move_image found for {img_id} before add_image, skipping")
-                
+
+                elif op_type == "delete_image":
+                    print(f"🗑️ Marking image {img_id} for deletion")
+                    deleted_images.add(img_id)
+
+            for img_id in deleted_images:
+                if img_id in image_ops:
+                    del image_ops[img_id]
+                    print(f"✅ Image {img_id} deleted")
 
             if not image_ops:
                 print("⚠️ No images to draw on overlay")
