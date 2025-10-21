@@ -31,10 +31,15 @@ class Settings(BaseSettings):
     
     # CORS
     CORS_ORIGINS: List[str]
+    FRONTEND_URL: str = "http://localhost:5173"
     
     # Webhook
     WEBHOOK_TIMEOUT_SECONDS: int = 30
     WEBHOOK_RETRY_ATTEMPTS: int = 3
+
+    CLEANUP_GRACE_PERIOD_HOURS: int = 1
+    CLEANUP_KEEP_EDITED_HOURS: int = 24
+    CLEANUP_ENABLED: bool = True
     
     @property
     def upload_dir(self) -> str:

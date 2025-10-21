@@ -6,6 +6,7 @@ import time
 
 from app.config import settings
 from app.api.v1 import api_router
+from app.tasks.scheduler import start_scheduler, stop_scheduler
 
 
 @asynccontextmanager
@@ -16,8 +17,10 @@ async def lifespan(app: FastAPI):
     print(f"Debug mode: {settings.DEBUG}")
     print(">>> Using DB URL:", settings.DATABASE_URL)
 
-    
+    start_scheduler()
     yield
+    stop_scheduler()
+    
     print(f"Shutting down {settings.APP_NAME}")
 
 

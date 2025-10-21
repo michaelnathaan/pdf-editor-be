@@ -18,6 +18,7 @@ from app.api.deps import verify_api_key, verify_session_token
 from app.config import settings
 
 router = APIRouter(prefix="/files/{file_id}/sessions", tags=["sessions"])
+direct_router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 
 @router.post("", response_model=SessionCreateResponse, status_code=status.HTTP_201_CREATED)
@@ -61,7 +62,6 @@ async def create_session(
     await db.refresh(db_session)
 
     base_url = str(request.base_url).rstrip('/')
-    # Remove /api/v1 from base_url if present
     if '/api/v1' in base_url:
         base_url = base_url.split('/api/v1')[0]
     
@@ -102,6 +102,59 @@ async def get_session_info(
         )
     
     return db_session
+
+@direct_router.get("/{session_id}/info")
+async def get_session_info_direct(
+    session_id: UUID,
+    session_token: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get session information directly by session_id
+    
+    Requires session token
+    """
+    result = await db.execute(
+        select(EditSession).where(
+            EditSession.id == session_id,
+            EditSession.session_token == session_token
+        )
+    )
+    db_session = result.scalar_one_or_none()
+    
+    if not db_session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found"
+        )
+    
+    # Check if session is expired
+    from datetime import datetime
+    if db_session.expires_at < datetime.utcnow():
+        db_session.status = "expired"
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="Session has expired"
+        )
+    
+    # Get file info
+    result = await db.execute(
+        select(File).where(File.id == db_session.file_id)
+    )
+    db_file = result.scalar_one_or_none()
+    
+    return {
+        "id": db_session.id,
+        "file_id": db_session.file_id,
+        "file_name": db_file.original_filename if db_file else "Unknown",
+        "page_count": db_file.page_count if db_file else 0,
+        "session_token": db_session.session_token,
+        "status": db_session.status,
+        "created_at": db_session.created_at,
+        "expires_at": db_session.expires_at,
+        "permissions": db_session.permissions,
+    }
 
 
 @router.post("/{session_id}/commit", response_model=SessionCommitResponse)
@@ -193,6 +246,11 @@ async def commit_session(
         
         db_session.callback_status = "success" if success else "failed"
         await db.commit()
+
+    if StorageService.file_exists(db_file.file_path):
+        StorageService.delete_file(db_file.file_path)
+
+    StorageService.delete_session_temp_dir(session_id)
     
     return SessionCommitResponse(
         session_id=session_id,
@@ -205,7 +263,7 @@ async def commit_session(
     )
 
 
-@router.get("/{session_id}/download")
+@direct_router.get("/{session_id}/download")
 async def download_edited_file(
     session_id: UUID,
     session_token: str,

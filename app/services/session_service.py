@@ -24,10 +24,10 @@ class SessionService:
     @staticmethod
     def build_editor_url(session_id: UUID, session_token: str, base_url: str = None) -> str:
         """Build the editor URL for frontend"""
-        # In production, this would be your frontend URL
-        # For now, using a placeholder
-        base = base_url or f"http://localhost:5173"
-        return f"{base}/edit/{session_id}?session_token={session_token}"
+        # Use environment variable for frontend URL
+        from app.config import settings
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
+        return f"{frontend_url}/edit/{session_id}?session_token={session_token}"
     
     @staticmethod
     async def send_webhook(
