@@ -61,7 +61,7 @@ async def create_session(
     await db.commit()
     await db.refresh(db_session)
 
-    base_url = str(request.base_url).rstrip('/')
+    base_url = settings.BACKEND_URL
     if '/api/v1' in base_url:
         base_url = base_url.split('/api/v1')[0]
     
@@ -230,7 +230,7 @@ async def commit_session(
     await db.commit()  # <-- add this right after updating session fields
     await db.refresh(db_session)
 
-    base_url = str(request.base_url).rstrip('/')
+    base_url = settings.BACKEND_URL
     download_url = f"{base_url}/api/v1/sessions/{session_id}/download?session_token={session_token}"
 
     if db_session.callback_url:

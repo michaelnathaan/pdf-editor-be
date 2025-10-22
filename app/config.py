@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     DEBUG: bool
     HOST: str
     PORT: int
+    BACKEND_URL: str
     
     # API Authentication
     API_SECRET_KEY: str
